@@ -1,0 +1,49 @@
+name: todo
+description: "Todo List Uygulaması - Yapılacaklar ve Yapılmayacaklar Listesi"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  provider: ^6.1.2
+  
+  # Local Storage
+  shared_preferences: ^2.2.3
+  
+  # Date and Time
+  intl: ^0.19.0
+  
+  # Notifications
+  flutter_local_notifications: ^17.0.0
+  permission_handler: ^11.3.1
+  timezone: ^0.9.4
+  
+  # Background Work
+  android_alarm_manager_plus: ^4.0.4
+  
+  # JSON handling
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Code generation for JSON
+  build_runner: ^2.4.9
+  json_serializable: ^6.7.1
+
+  # Linting
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
