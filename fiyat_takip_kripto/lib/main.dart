@@ -132,6 +132,8 @@ void _initForegroundTask() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -153,6 +155,8 @@ class MyApp extends StatelessWidget {
 }
 
 class CryptoPriceTracker extends StatefulWidget {
+  const CryptoPriceTracker({super.key});
+
   @override
   _CryptoPriceTrackerState createState() => _CryptoPriceTrackerState();
 }
@@ -512,7 +516,7 @@ class _CryptoPriceTrackerState extends State<CryptoPriceTracker> {
           return AlertDialog(
             backgroundColor: Color(0xFF1E1E1E),
             title: Text('Yeni Coin Ekle', style: TextStyle(color: Colors.white)),
-            content: Container(
+            content: SizedBox(
               width: double.maxFinite,
               height: 400,
               child: Column(
@@ -774,13 +778,13 @@ class _CryptoPriceTrackerState extends State<CryptoPriceTracker> {
                                         onChanged: (value) async {
                                           await _updateThresholdStatus(coin.symbol, idx, value);
                                         },
-                                        activeColor: Colors.green,
+                                        activeThumbColor: Colors.green,
                                       ),
                                     ],
                                   ),
                                   onTap: () => _showEditThresholdDialog(coin, idx),
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                         ),
@@ -797,16 +801,16 @@ class _CryptoPriceTrackerState extends State<CryptoPriceTracker> {
             onPressed: _showAddCoinDialog,
             backgroundColor: Colors.blue,
             heroTag: "addCoin",
-            child: Icon(Icons.add),
             tooltip: 'Yeni Coin Ekle',
+            child: Icon(Icons.add),
           ),
           SizedBox(height: 16),
           FloatingActionButton(
             onPressed: _toggleMonitoring,
             backgroundColor: _isMonitoring ? Colors.red : Colors.green,
             heroTag: "monitoring",
-            child: Icon(_isMonitoring ? Icons.stop : Icons.play_arrow),
             tooltip: _isMonitoring ? 'Takibi Durdur' : 'Takibi Başlat',
+            child: Icon(_isMonitoring ? Icons.stop : Icons.play_arrow),
           ),
         ],
       ),

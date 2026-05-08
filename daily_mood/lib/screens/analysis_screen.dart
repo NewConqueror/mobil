@@ -207,7 +207,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       getTitlesWidget: (value, meta) {
                         return Text(
                           value.toInt().toString(),
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: MoodColors.textSecondary,
                             fontSize: 12,
                           ),
@@ -489,7 +489,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.lightbulb_outline,
                 color: MoodColors.accent,
                 size: 24,

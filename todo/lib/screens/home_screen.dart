@@ -299,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('${isTodo ? 'Görev' : 'Öğe'}i Sil'),
-        content: Text('\"${item.title}\" ${isTodo ? 'görevini' : 'öğesini'} silmek istediğinizden emin misiniz?'),
+        content: Text('"${item.title}" ${isTodo ? 'görevini' : 'öğesini'} silmek istediğinizden emin misiniz?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.moodtomusic.app"
-        minSdk = 21  // Android 5.0 and above
+        minSdk = flutter.minSdkVersion  // Android 5.0 and above
         targetSdk = flutter.targetSdkVersion
         versionCode = 1
         versionName = "1.0.0"

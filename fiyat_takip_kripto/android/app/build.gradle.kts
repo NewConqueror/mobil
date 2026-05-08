@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.fiyat_takip_kripto"
-    compileSdk = 35
+    compileSdk = 36
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.fiyat_takip_kripto"
-        minSdk = 23  // Güncellenen minimum SDK
+        minSdk = flutter.minSdkVersion  // Güncellenen minimum SDK
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"

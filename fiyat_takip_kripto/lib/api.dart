@@ -108,7 +108,7 @@ class BinanceAPI {
   static Future<double> getCoinPrice(String symbol) async {
     try {
       // Binance API her zaman USDT ile çalışır
-      final String apiSymbol = symbol.toUpperCase() + 'USDT';
+      final String apiSymbol = '${symbol.toUpperCase()}USDT';
       final url = Uri.parse('$baseUrl?symbol=$apiSymbol');
       
       final response = await http.get(url, headers: {

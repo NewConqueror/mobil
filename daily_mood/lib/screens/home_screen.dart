@@ -277,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: () => _navigateToHistory(context),
-              child: Text(
+              child: const Text(
                 'Tümünü Gör',
                 style: TextStyle(
                   color: MoodColors.accent,

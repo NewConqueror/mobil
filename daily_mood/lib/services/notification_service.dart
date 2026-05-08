@@ -343,9 +343,7 @@ class NotificationService {
       return;
     }
 
-    if (_storageService == null) {
-      _storageService = await StorageService.getInstance();
-    }
+    _storageService ??= await StorageService.getInstance();
 
     try {
       // Set up AlarmManager for exact hourly alarms
@@ -390,9 +388,7 @@ class NotificationService {
   Future<void> stopBackgroundService() async {
     if (!_isBackgroundServiceRunning) return;
 
-    if (_storageService == null) {
-      _storageService = await StorageService.getInstance();
-    }
+    _storageService ??= await StorageService.getInstance();
 
     try {
       // Cancel AlarmManager alarms
@@ -508,17 +504,13 @@ class NotificationService {
 
   /// Check if notifications are enabled
   Future<bool> areNotificationsEnabled() async {
-    if (_storageService == null) {
-      _storageService = await StorageService.getInstance();
-    }
+    _storageService ??= await StorageService.getInstance();
     return await _storageService!.getNotificationsEnabled();
   }
 
   /// Set notifications enabled
   Future<void> setNotificationsEnabled(bool enabled) async {
-    if (_storageService == null) {
-      _storageService = await StorageService.getInstance();
-    }
+    _storageService ??= await StorageService.getInstance();
     await _storageService!.setNotificationsEnabled(enabled);
 
     if (enabled) {

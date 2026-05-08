@@ -158,7 +158,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.calendar_today_outlined,
                     color: MoodColors.accent,
                     size: 20,
@@ -182,7 +182,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                         color: MoodColors.accent.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
+                      child: const Text(
                         'Bugün',
                         style: TextStyle(
                           color: MoodColors.accent,
@@ -193,7 +193,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                     ),
                   ],
                   const Spacer(),
-                  Icon(
+                  const Icon(
                     Icons.arrow_forward_ios,
                     color: MoodColors.textSecondary,
                     size: 16,
@@ -257,11 +257,11 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: MoodColors.accent, width: 2),
+                borderSide: const BorderSide(color: MoodColors.accent, width: 2),
               ),
               contentPadding: const EdgeInsets.all(16),
             ),
-            style: TextStyle(color: MoodColors.textPrimary, height: 1.4),
+            style: const TextStyle(color: MoodColors.textPrimary, height: 1.4),
           ),
         ],
       ),
@@ -310,7 +310,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: MoodColors.accent,
               onPrimary: Colors.white,
               surface: Colors.white,

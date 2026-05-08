@@ -24,5 +24,35 @@ class SpotifyConfig {
     'calm': 'chill relax peaceful calm',
     'romantic': 'love romantic mood',
     'focused': 'focus study concentration',
+    'angry': 'angry intense heavy',
+    'nostalgic': 'nostalgic throwback classic',
+    'chill': 'chill laidback',
+    'party': 'party dance upbeat',
+    'sleepy': 'sleep ambient calm',
+    'motivated': 'motivation workout power',
+    'melancholic': 'melancholic moody',
+    'adventurous': 'epic adventure soundtrack',
+    'spiritual': 'spiritual meditation zen',
+    'confident': 'confident empowerment',
   };
+
+  // Random search queries for the Random Song feature
+  static const List<String> randomSearchQueries = [
+    'pop',
+    'rock',
+    'indie',
+    'hiphop',
+    'electronic',
+    'dance',
+    'house',
+    'jazz',
+    'classical',
+    'lofi',
+    'acoustic',
+    'ambient',
+    'soul',
+    'rnb',
+    'folk',
+    'reggae',
+  ];
 }

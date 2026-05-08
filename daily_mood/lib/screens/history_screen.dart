@@ -123,7 +123,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           hintStyle: TextStyle(
             color: MoodColors.textSecondary.withOpacity(0.7),
           ),
-          prefixIcon: Icon(
+          prefixIcon: const Icon(
             Icons.search,
             color: MoodColors.textSecondary,
           ),
@@ -168,7 +168,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     child: Text(
                       date.relativDateString,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: MoodColors.accent,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,

@@ -789,7 +789,7 @@ class _AddEditMoodDialogState extends State<AddEditMoodDialog> {
                       _nameController.text.isEmpty
                           ? 'Ad'
                           : _nameController.text,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 8,
                         fontWeight: FontWeight.w500,
                         color: MoodColors.textPrimary,

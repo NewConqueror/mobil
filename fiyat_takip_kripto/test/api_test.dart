@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../lib/api.dart';
+import 'package:fiyat_takip_kripto/api.dart';
 
 void main() async {
   print('=== API Test Başlatılıyor ===');

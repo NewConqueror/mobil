@@ -8,7 +8,7 @@ class PriceMonitoringService {
   static Timer? _timer;
   static bool _isRunning = false;
   static List<CoinData> _trackedCoins = [];
-  static Map<String, DateTime> _lastNotificationTime = {};
+  static final Map<String, DateTime> _lastNotificationTime = {};
   static const String _monitoringEnabledKey = 'monitoring_enabled';
 
   // Varsayılan coin listesi
@@ -259,7 +259,7 @@ class PriceMonitoringService {
       threshold: threshold,
     );
     
-    print('📢 $name için $label uyarı bildirimi gönderildi! (${typeText} \$${threshold})');
+    print('📢 $name için $label uyarı bildirimi gönderildi! ($typeText \$$threshold)');
   }
 
   static List<CoinData> getTrackedCoins() {

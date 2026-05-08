@@ -220,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     subtitle: const Text('Saat başı hatırlatma bildirimi (08:00-23:00)'),
                     trailing: Switch(
                       value: _notificationsEnabled,
-                      activeColor: StreakColors.accent,
+                      activeThumbColor: StreakColors.accent,
                       onChanged: (value) async {
                         setDialogState(() {
                           _notificationsEnabled = value;

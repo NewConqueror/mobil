@@ -137,7 +137,7 @@ class StreakProvider extends ChangeNotifier {
         }
       } else {
         // Check if this entry is exactly 1 day before the last one
-        final expectedDate = lastDate!.subtract(const Duration(days: 1));
+        final expectedDate = lastDate.subtract(const Duration(days: 1));
         if (entry.date.year == expectedDate.year && 
             entry.date.month == expectedDate.month && 
             entry.date.day == expectedDate.day) {
