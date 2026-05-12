@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/mood_entry.dart';
+import '../utils/mood_entry_display.dart';
 
 class ExportService {
   static final ExportService _instance = ExportService._();
@@ -40,7 +41,7 @@ class ExportService {
       final entry = sortedEntries[i];
       
       buffer.writeln('📅 ${dateFormatter.format(entry.date)}');
-      buffer.writeln('${entry.mood.emoji} Ruh Hali: ${entry.mood.displayName}');
+      buffer.writeln('${entry.emoji} Ruh Hali: ${entry.displayName}');
       
       if (entry.moodSetAt != null) {
         buffer.writeln('⏰ Saat: ${timeFormatter.format(entry.moodSetAt!)}');

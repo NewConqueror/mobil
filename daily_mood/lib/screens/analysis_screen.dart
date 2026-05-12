@@ -3,9 +3,28 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../services/mood_provider.dart';
+import '../models/mood_entry.dart';
 import '../models/mood.dart';
 import '../utils/mood_colors.dart';
 import '../utils/date_extensions.dart';
+
+class _MoodStat {
+  final String id;
+  final String emoji;
+  final String name;
+  final Color color;
+  final bool isCustom;
+  int count;
+
+  _MoodStat({
+    required this.id,
+    required this.emoji,
+    required this.name,
+    required this.color,
+    required this.isCustom,
+    this.count = 0,
+  });
+}
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -59,8 +78,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           }
 
           final analysisData = _getAnalysisData(moodProvider);
+          final totalCount = analysisData.fold<int>(
+            0,
+            (sum, stat) => sum + stat.count,
+          );
 
-          if (analysisData.isEmpty) {
+          if (totalCount == 0) {
             return _buildEmptyState();
           }
 
@@ -80,7 +103,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 const SizedBox(height: 24),
                 
                 // Statistics cards
-                _buildStatisticsCards(moodProvider, analysisData),
+                _buildStatisticsCards(analysisData),
                 
                 const SizedBox(height: 24),
                 
@@ -90,7 +113,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 const SizedBox(height: 24),
                 
                 // Insights
-                _buildInsights(moodProvider, analysisData),
+                _buildInsights(analysisData),
               ],
             ),
           );
@@ -150,9 +173,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Widget _buildMoodChart(Map<Mood, int> data) {
-    final total = data.values.fold(0, (sum, count) => sum + count);
+  Widget _buildMoodChart(List<_MoodStat> data) {
+    final total = data.fold<int>(0, (sum, stat) => sum + stat.count);
     if (total == 0) return Container();
+
+    final maxCount = data.fold<int>(0, (max, stat) {
+      return stat.count > max ? stat.count : max;
+    });
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -183,14 +210,21 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: data.values.isEmpty ? 10 : data.values.reduce((a, b) => a > b ? a : b).toDouble() + 1,
+                maxY: maxCount == 0 ? 1 : maxCount.toDouble() + 1,
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (group) => MoodColors.textPrimary,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      final mood = Mood.values[group.x.toInt()];
+                      final index = group.x.toInt();
+                      if (index < 0 || index >= data.length) {
+                        return BarTooltipItem(
+                          '',
+                          TextStyle(color: Colors.white),
+                        );
+                      }
+                      final mood = data[index];
                       return BarTooltipItem(
-                        '${mood.displayName}\n${rod.toY.toInt()} kayıt',
+                        '${mood.name}\n${rod.toY.toInt()} kayıt',
                         const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
@@ -219,8 +253,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        if (value.toInt() < Mood.values.length) {
-                          final mood = Mood.values[value.toInt()];
+                        if (value.toInt() < data.length) {
+                          final mood = data[value.toInt()];
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
@@ -241,14 +275,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   ),
                 ),
                 borderData: FlBorderData(show: false),
-                barGroups: data.entries.map((entry) {
-                  final moodIndex = Mood.values.indexOf(entry.key);
+                barGroups: data.asMap().entries.map((entry) {
+                  final moodIndex = entry.key;
                   return BarChartGroupData(
                     x: moodIndex,
                     barRods: [
                       BarChartRodData(
-                        toY: entry.value.toDouble(),
-                        color: MoodColors.getColor(entry.key),
+                        toY: entry.value.count.toDouble(),
+                        color: entry.value.color,
                         width: 20,
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(4),
@@ -266,11 +300,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Widget _buildStatisticsCards(MoodProvider moodProvider, Map<Mood, int> data) {
-    final total = data.values.fold(0, (sum, count) => sum + count);
-    final mostFrequent = data.entries.isEmpty 
-        ? null 
-        : data.entries.reduce((a, b) => a.value > b.value ? a : b);
+  Widget _buildStatisticsCards(List<_MoodStat> data) {
+    final total = data.fold<int>(0, (sum, stat) => sum + stat.count);
+    final mostFrequentCandidates = data.where((stat) => stat.count > 0).toList();
+    final mostFrequent = mostFrequentCandidates.isEmpty
+        ? null
+        : mostFrequentCandidates
+            .reduce((a, b) => a.count > b.count ? a : b);
 
     return Row(
       children: [
@@ -286,11 +322,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         Expanded(
           child: _buildStatCard(
             title: 'En Sık Ruh Hali',
-            value: mostFrequent?.key.emoji ?? '😐',
-            subtitle: mostFrequent?.key.displayName ?? 'Yok',
+            value: mostFrequent?.emoji ?? '😐',
+            subtitle: mostFrequent?.name ?? 'Yok',
             icon: Icons.emoji_emotions,
-            color: mostFrequent != null 
-                ? MoodColors.getColor(mostFrequent.key) 
+            color: mostFrequent != null
+                ? mostFrequent.color
                 : MoodColors.textSecondary,
           ),
         ),
@@ -367,9 +403,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Widget _buildMoodBreakdown(Map<Mood, int> data) {
-    final total = data.values.fold(0, (sum, count) => sum + count);
+  Widget _buildMoodBreakdown(List<_MoodStat> data) {
+    final total = data.fold<int>(0, (sum, stat) => sum + stat.count);
     if (total == 0) return Container();
+    final maxCount = data.fold<int>(0, (max, stat) {
+      return stat.count > max ? stat.count : max;
+    });
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -395,8 +434,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 ),
           ),
           const SizedBox(height: 16),
-          ...data.entries.where((entry) => entry.value > 0).map((entry) {
-            final percentage = (entry.value / total * 100).round();
+          ...data.where((entry) => entry.count > 0).map((entry) {
+            final percentage = (entry.count / total * 100).round();
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Row(
@@ -405,16 +444,16 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: MoodColors.getSecondaryColor(entry.key),
+                      color: entry.color.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: MoodColors.getPrimaryColor(entry.key),
+                        color: entry.color.withOpacity(0.7),
                         width: 1,
                       ),
                     ),
                     child: Center(
                       child: Text(
-                        entry.key.emoji,
+                        entry.emoji,
                         style: const TextStyle(fontSize: 18),
                       ),
                     ),
@@ -428,14 +467,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              entry.key.displayName,
+                              entry.name,
                               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: MoodColors.textPrimary,
                                   ),
                             ),
                             Text(
-                              '%$percentage · ${entry.value} kayıt',
+                              '%$percentage · ${entry.count} kayıt',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: MoodColors.textSecondary,
                                     fontWeight: FontWeight.w500,
@@ -445,10 +484,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                         ),
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
-                          value: entry.value / (data.values.isEmpty ? 1 : data.values.reduce((a, b) => a > b ? a : b)),
-                          backgroundColor: MoodColors.getSecondaryColor(entry.key),
+                          value: maxCount == 0 ? 0 : entry.count / maxCount,
+                          backgroundColor: entry.color.withOpacity(0.3),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            MoodColors.getColor(entry.key),
+                            entry.color,
                           ),
                         ),
                       ],
@@ -463,7 +502,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Widget _buildInsights(MoodProvider moodProvider, Map<Mood, int> data) {
+  Widget _buildInsights(List<_MoodStat> data) {
     final insights = _generateInsights(data);
     
     if (insights.isEmpty) return Container();
@@ -570,8 +609,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Map<Mood, int> _getAnalysisData(MoodProvider moodProvider) {
-    List<dynamic> entries;
+  List<_MoodStat> _getAnalysisData(MoodProvider moodProvider) {
+    List<MoodEntry> entries;
     
     switch (_selectedPeriod) {
       case 'this_week':
@@ -593,37 +632,102 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         entries = moodProvider.getThisWeekEntries();
     }
 
-    final moodCounts = <Mood, int>{};
+    final stats = <_MoodStat>[];
+    final statsById = <String, _MoodStat>{};
+
+    void addStat(_MoodStat stat) {
+      stats.add(stat);
+      statsById[stat.id] = stat;
+    }
+
     for (final mood in Mood.values) {
-      moodCounts[mood] = 0;
+      addStat(
+        _MoodStat(
+          id: 'builtin:${mood.value}',
+          emoji: mood.emoji,
+          name: mood.displayName,
+          color: MoodColors.getColor(mood),
+          isCustom: false,
+        ),
+      );
     }
-    
+
+    for (final custom in moodProvider.customMoods) {
+      addStat(
+        _MoodStat(
+          id: 'custom:${custom.id}',
+          emoji: custom.emoji,
+          name: custom.displayName,
+          color: Color(custom.colorValue),
+          isCustom: true,
+        ),
+      );
+    }
+
     for (final entry in entries) {
-      moodCounts[entry.mood] = (moodCounts[entry.mood] ?? 0) + 1;
+      if (entry.customMood != null) {
+        final custom = entry.customMood!;
+        final id = 'custom:${custom.id}';
+        final stat = statsById[id] ??
+            (() {
+              final newStat = _MoodStat(
+                id: id,
+                emoji: custom.emoji,
+                name: custom.displayName,
+                color: Color(custom.colorValue),
+                isCustom: true,
+              );
+              addStat(newStat);
+              return newStat;
+            })();
+        stat.count += 1;
+      } else {
+        final id = 'builtin:${entry.mood.value}';
+        final stat = statsById[id];
+        if (stat != null) {
+          stat.count += 1;
+        }
+      }
     }
-    
-    return moodCounts;
+
+    return stats;
   }
 
-  List<String> _generateInsights(Map<Mood, int> data) {
+  List<String> _generateInsights(List<_MoodStat> data) {
     final insights = <String>[];
-    final total = data.values.fold(0, (sum, count) => sum + count);
+    final total = data.fold<int>(0, (sum, stat) => sum + stat.count);
     
     if (total == 0) return insights;
 
     // Most frequent mood
-    final mostFrequent = data.entries.reduce((a, b) => a.value > b.value ? a : b);
-    if (mostFrequent.value > 0) {
-      final percentage = (mostFrequent.value / total * 100).round();
-      insights.add('Bu dönemde en çok ${mostFrequent.key.displayName.toLowerCase()} hissettiniz (%$percentage).');
+    final mostFrequent = data.reduce((a, b) => a.count > b.count ? a : b);
+    if (mostFrequent.count > 0) {
+      final percentage = (mostFrequent.count / total * 100).round();
+      insights.add('Bu dönemde en çok ${mostFrequent.name.toLowerCase()} hissettiniz (%$percentage).');
     }
 
     // Positive vs negative moods
     final positiveMoods = [Mood.happy, Mood.excited, Mood.calm];
     final negativeMoods = [Mood.sad, Mood.angry, Mood.anxious];
     
-    final positiveCount = positiveMoods.fold(0, (sum, mood) => sum + (data[mood] ?? 0));
-    final negativeCount = negativeMoods.fold(0, (sum, mood) => sum + (data[mood] ?? 0));
+    int countForMood(Mood mood) {
+      final id = 'builtin:${mood.value}';
+      for (final stat in data) {
+        if (stat.id == id) {
+          return stat.count;
+        }
+      }
+      return 0;
+    }
+
+    final positiveCount = positiveMoods.fold(
+      0,
+      (sum, mood) => sum + countForMood(mood),
+    );
+    final negativeCount = negativeMoods.fold(
+      0,
+      (sum, mood) => sum + countForMood(mood),
+    );
     
     if (positiveCount > negativeCount) {
       insights.add('Bu dönemde genellikle pozitif duygular yaşadınız. Harika!');
@@ -634,7 +738,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     }
 
     // Diversity of emotions
-    final activeMoods = data.values.where((count) => count > 0).length;
+    final activeMoods = data.where((stat) => stat.count > 0).length;
     if (activeMoods >= 5) {
       insights.add('Geniş bir duygu yelpazesi yaşadınız, bu duygusal zenginliğin bir göstergesi.');
     }

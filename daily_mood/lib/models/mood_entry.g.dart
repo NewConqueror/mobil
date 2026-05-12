@@ -10,6 +10,9 @@ MoodEntry _$MoodEntryFromJson(Map<String, dynamic> json) => MoodEntry(
   id: json['id'] as String,
   date: MoodEntry._dateTimeFromJson(json['date'] as String),
   mood: MoodEntry._moodFromJson(json['mood'] as String),
+  customMood: MoodEntry._customMoodFromJson(
+    json['customMood'] as Map<String, dynamic>?,
+  ),
   note: json['note'] as String,
   moodSetAt: MoodEntry._dateTimeFromJsonNullable(json['moodSetAt'] as String?),
 );
@@ -18,6 +21,7 @@ Map<String, dynamic> _$MoodEntryToJson(MoodEntry instance) => <String, dynamic>{
   'id': instance.id,
   'date': MoodEntry._dateTimeToJson(instance.date),
   'mood': MoodEntry._moodToJson(instance.mood),
+  'customMood': MoodEntry._customMoodToJson(instance.customMood),
   'note': instance.note,
   'moodSetAt': MoodEntry._dateTimeToJsonNullable(instance.moodSetAt),
 };

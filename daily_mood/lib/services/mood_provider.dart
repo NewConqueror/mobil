@@ -90,6 +90,29 @@ class MoodProvider extends ChangeNotifier {
     required String note,
     DateTime? date,
   }) async {
+    await _addEntry(mood: mood, customMood: null, note: note, date: date);
+  }
+
+  /// Add a new custom mood entry or update existing one
+  Future<void> addCustomMoodEntry({
+    required CustomMood customMood,
+    required String note,
+    DateTime? date,
+  }) async {
+    await _addEntry(
+      mood: Mood.neutral,
+      customMood: customMood,
+      note: note,
+      date: date,
+    );
+  }
+
+  Future<void> _addEntry({
+    required Mood mood,
+    CustomMood? customMood,
+    required String note,
+    DateTime? date,
+  }) async {
     _setLoading(true);
     try {
       final entryDate = date ?? DateTime.now();
@@ -97,8 +120,11 @@ class MoodProvider extends ChangeNotifier {
 
       if (existingEntry != null) {
         // Update existing entry
-        final updatedEntry = existingEntry.copyWith(
+        final updatedEntry = MoodEntry(
+          id: existingEntry.id,
+          date: entryDate,
           mood: mood,
+          customMood: customMood,
           note: note,
           moodSetAt: DateTime.now(), // Mood değiştirildiği zamanı kaydet
         );
@@ -109,6 +135,7 @@ class MoodProvider extends ChangeNotifier {
           id: '${entryDate.millisecondsSinceEpoch}',
           date: entryDate,
           mood: mood,
+          customMood: customMood,
           note: note,
           moodSetAt: DateTime.now(),
         );
@@ -214,6 +241,7 @@ class MoodProvider extends ChangeNotifier {
     }
 
     for (final entry in weekEntries) {
+      if (entry.customMood != null) continue;
       moodCounts[entry.mood] = (moodCounts[entry.mood] ?? 0) + 1;
     }
 
@@ -259,8 +287,11 @@ class MoodProvider extends ChangeNotifier {
 
     final moodCounts = <Mood, int>{};
     for (final entry in _entries) {
+      if (entry.customMood != null) continue;
       moodCounts[entry.mood] = (moodCounts[entry.mood] ?? 0) + 1;
     }
+
+    if (moodCounts.isEmpty) return null;
 
     return moodCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
   }
@@ -276,8 +307,11 @@ class MoodProvider extends ChangeNotifier {
 
     final moodCounts = <Mood, int>{};
     for (final entry in periodEntries) {
+      if (entry.customMood != null) continue;
       moodCounts[entry.mood] = (moodCounts[entry.mood] ?? 0) + 1;
     }
+
+    if (moodCounts.isEmpty) return null;
 
     return moodCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
   }

@@ -69,7 +69,12 @@ class StorageService {
 
   // Notifications
   Future<bool> getNotificationsEnabled() async {
-    return _prefs?.getBool(_notificationsEnabledKey) ?? true;
+    final value = _prefs?.getBool(_notificationsEnabledKey);
+    if (value == null) {
+      await _prefs?.setBool(_notificationsEnabledKey, true);
+      return true;
+    }
+    return value;
   }
 
   Future<bool> setNotificationsEnabled(bool enabled) async {

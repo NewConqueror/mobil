@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/mood.dart';
+import '../models/custom_mood.dart';
 import '../models/mood_entry.dart';
 import '../services/mood_provider.dart';
 import '../widgets/mood_selector.dart';
@@ -19,6 +20,7 @@ class AddEntryScreen extends StatefulWidget {
 class _AddEntryScreenState extends State<AddEntryScreen> {
   late TextEditingController _noteController;
   Mood? _selectedMood;
+  CustomMood? _selectedCustomMood;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   bool _canChangeMood = true;
@@ -29,7 +31,12 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     _noteController = TextEditingController();
 
     if (widget.existingEntry != null) {
-      _selectedMood = widget.existingEntry!.mood;
+      if (widget.existingEntry!.customMood != null) {
+        _selectedCustomMood = widget.existingEntry!.customMood;
+        _selectedMood = null;
+      } else {
+        _selectedMood = widget.existingEntry!.mood;
+      }
       _noteController.text = widget.existingEntry!.note;
       _selectedDate = widget.existingEntry!.date;
       _canChangeMood = widget.existingEntry!.canChangeMoodToday;
@@ -52,7 +59,9 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
   bool get _isEditing => widget.existingEntry != null;
   bool get _canSave =>
-      _selectedMood != null || _noteController.text.trim().isNotEmpty;
+      _selectedMood != null ||
+      _selectedCustomMood != null ||
+      _noteController.text.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -96,10 +105,18 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                   // Mood selection
                   MoodSelector(
                     selectedMood: _selectedMood,
+                    selectedCustomMood: _selectedCustomMood,
                     canChangeMood: _canChangeMood,
                     onMoodSelected: (mood) {
                       setState(() {
                         _selectedMood = mood;
+                        _selectedCustomMood = null;
+                      });
+                    },
+                    onCustomMoodSelected: (mood) {
+                      setState(() {
+                        _selectedCustomMood = mood;
+                        _selectedMood = null;
                       });
                     },
                   ),
@@ -340,15 +357,27 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       final moodProvider = context.read<MoodProvider>();
 
       if (_isEditing) {
-        final updatedEntry = widget.existingEntry!.copyWith(
-          mood: _selectedMood,
-          note: _noteController.text.trim(),
+        final selectedMood = _selectedCustomMood != null
+            ? Mood.neutral
+            : (_selectedMood ?? widget.existingEntry!.mood);
+        final updatedEntry = MoodEntry(
+          id: widget.existingEntry!.id,
           date: _selectedDate,
+          mood: selectedMood,
+          customMood: _selectedCustomMood,
+          note: _noteController.text.trim(),
+          moodSetAt: widget.existingEntry!.moodSetAt,
         );
         await moodProvider.updateMoodEntry(updatedEntry);
       } else {
         // Yeni kayıt veya mevcut kaydın güncellenmesi
-        if (_selectedMood != null) {
+        if (_selectedCustomMood != null) {
+          await moodProvider.addCustomMoodEntry(
+            customMood: _selectedCustomMood!,
+            note: _noteController.text.trim(),
+            date: _selectedDate,
+          );
+        } else if (_selectedMood != null) {
           // Mood ve not ekleme/güncelleme
           await moodProvider.addMoodEntry(
             mood: _selectedMood!,

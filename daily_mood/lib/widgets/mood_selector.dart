@@ -183,6 +183,10 @@ class _MoodSelectorState extends State<MoodSelector>
     return Consumer<MoodProvider>(
       builder: (context, moodProvider, child) {
         final customMoods = moodProvider.customMoods;
+        final selectedLabel =
+            widget.selectedCustomMood?.displayName ??
+            widget.selectedMood?.displayName ??
+            'Seçilmedi';
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -207,7 +211,7 @@ class _MoodSelectorState extends State<MoodSelector>
                     child: Text(
                       widget.canChangeMood
                           ? 'Bugün nasıl hissediyorsun?'
-                          : 'Bugünkü ruh haliniz: ${widget.selectedMood?.displayName ?? "Seçilmedi"}',
+                          : 'Bugünkü ruh haliniz: $selectedLabel',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: MoodColors.textPrimary,

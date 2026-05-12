@@ -6,6 +6,7 @@ import '../models/mood_entry.dart';
 import '../widgets/mood_entry_card.dart';
 import '../utils/mood_colors.dart';
 import '../utils/date_extensions.dart';
+import '../utils/mood_entry_display.dart';
 import 'add_entry_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -288,7 +289,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((entry) {
         return entry.note.toLowerCase().contains(_searchQuery) ||
-               entry.mood.displayName.toLowerCase().contains(_searchQuery);
+               entry.displayName.toLowerCase().contains(_searchQuery);
       }).toList();
     }
 

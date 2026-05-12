@@ -148,6 +148,11 @@ class NotificationService {
 
   bool get isBackgroundServiceRunning => _isBackgroundServiceRunning;
 
+  Future<bool> getBackgroundServiceEnabled() async {
+    _storageService ??= await StorageService.getInstance();
+    return await _storageService!.getBackgroundServiceEnabled();
+  }
+
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -428,7 +433,9 @@ class NotificationService {
 
   /// Toggle background service
   Future<void> toggleBackgroundService() async {
-    if (_isBackgroundServiceRunning) {
+    _storageService ??= await StorageService.getInstance();
+    final isEnabled = await _storageService!.getBackgroundServiceEnabled();
+    if (_isBackgroundServiceRunning || isEnabled) {
       await stopBackgroundService();
     } else {
       await startBackgroundService();

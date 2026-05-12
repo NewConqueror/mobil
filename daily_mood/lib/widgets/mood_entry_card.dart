@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/mood_entry.dart';
 import '../utils/mood_colors.dart';
 import '../utils/date_extensions.dart';
+import '../utils/mood_entry_display.dart';
 
 class MoodEntryCard extends StatelessWidget {
   final MoodEntry entry;
@@ -34,12 +35,12 @@ class MoodEntryCard extends StatelessWidget {
               color: MoodColors.cardBackground,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: MoodColors.getSecondaryColor(entry.mood),
+                color: entry.secondaryColor,
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: MoodColors.getColor(entry.mood).withOpacity(0.1),
+                  color: entry.color.withOpacity(0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -52,16 +53,16 @@ class MoodEntryCard extends StatelessWidget {
                   width: compact ? 50 : 60,
                   height: compact ? 50 : 60,
                   decoration: BoxDecoration(
-                    color: MoodColors.getSecondaryColor(entry.mood),
+                    color: entry.secondaryColor,
                     borderRadius: BorderRadius.circular(compact ? 25 : 30),
                     border: Border.all(
-                      color: MoodColors.getPrimaryColor(entry.mood),
+                      color: entry.primaryColor,
                       width: 2,
                     ),
                   ),
                   child: Center(
                     child: Text(
-                      entry.mood.emoji,
+                      entry.emoji,
                       style: TextStyle(
                         fontSize: compact ? 20 : 24,
                       ),
@@ -98,9 +99,9 @@ class MoodEntryCard extends StatelessWidget {
                             const SizedBox(width: 8),
                           ],
                           Text(
-                            entry.mood.displayName,
+                            entry.displayName,
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  color: MoodColors.getPrimaryColor(entry.mood),
+                                  color: entry.primaryColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -266,15 +267,15 @@ class TodayMoodCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            MoodColors.getColor(entry.mood).withOpacity(0.2),
-            MoodColors.getColor(entry.mood).withOpacity(0.1),
+            entry.color.withOpacity(0.2),
+            entry.color.withOpacity(0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: MoodColors.getPrimaryColor(entry.mood),
+          color: entry.primaryColor,
           width: 1,
         ),
       ),
@@ -287,16 +288,16 @@ class TodayMoodCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: MoodColors.getSecondaryColor(entry.mood),
+                  color: entry.secondaryColor,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                    color: MoodColors.getPrimaryColor(entry.mood),
+                    color: entry.primaryColor,
                     width: 2,
                   ),
                 ),
                 child: Center(
                   child: Text(
-                    entry.mood.emoji,
+                    entry.emoji,
                     style: const TextStyle(fontSize: 24),
                   ),
                 ),
@@ -307,7 +308,7 @@ class TodayMoodCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Bugün ${entry.mood.displayName.toLowerCase()} hissediyorsun',
+                      'Bugün ${entry.displayName.toLowerCase()} hissediyorsun',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: MoodColors.textPrimary,
@@ -327,7 +328,7 @@ class TodayMoodCard extends StatelessWidget {
                 IconButton(
                   onPressed: onEditMood,
                   icon: const Icon(Icons.edit_outlined),
-                  color: MoodColors.getPrimaryColor(entry.mood),
+                  color: entry.primaryColor,
                 ),
             ],
           ),

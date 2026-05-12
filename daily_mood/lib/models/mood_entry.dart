@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'mood.dart';
+import 'custom_mood.dart';
 
 part 'mood_entry.g.dart';
 
@@ -10,6 +11,8 @@ class MoodEntry {
   final DateTime date;
   @JsonKey(fromJson: _moodFromJson, toJson: _moodToJson)
   final Mood mood;
+  @JsonKey(fromJson: _customMoodFromJson, toJson: _customMoodToJson)
+  final CustomMood? customMood;
   final String note;
   @JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable)
   final DateTime? moodSetAt; // Ruh hali ne zaman seçildi
@@ -18,6 +21,7 @@ class MoodEntry {
     required this.id,
     required this.date,
     required this.mood,
+    this.customMood,
     required this.note,
     this.moodSetAt,
   });
@@ -29,6 +33,7 @@ class MoodEntry {
     String? id,
     DateTime? date,
     Mood? mood,
+    CustomMood? customMood,
     String? note,
     DateTime? moodSetAt,
   }) {
@@ -36,6 +41,7 @@ class MoodEntry {
       id: id ?? this.id,
       date: date ?? this.date,
       mood: mood ?? this.mood,
+      customMood: customMood ?? this.customMood,
       note: note ?? this.note,
       moodSetAt: moodSetAt ?? this.moodSetAt,
     );
@@ -86,5 +92,14 @@ class MoodEntry {
 
   static String _moodToJson(Mood mood) {
     return mood.value;
+  }
+
+  static CustomMood? _customMoodFromJson(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    return CustomMood.fromJson(json);
+  }
+
+  static Map<String, dynamic>? _customMoodToJson(CustomMood? mood) {
+    return mood?.toJson();
   }
 }

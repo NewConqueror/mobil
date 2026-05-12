@@ -21,15 +21,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadNotificationSettings();
-    _checkAndStartBackgroundService();
   }
 
-  Future<void> _checkAndStartBackgroundService() async {
+  Future<bool> _getBackgroundServiceStatus() async {
     final notificationService = NotificationService();
-    final enabled = await notificationService.areNotificationsEnabled();
-    if (enabled) {
-      await notificationService.startBackgroundService();
-    }
+    return await notificationService.getBackgroundServiceEnabled();
   }
 
   Future<void> _loadNotificationSettings() async {
@@ -200,95 +196,252 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showSettingsDialog(BuildContext context) {
+  void _showSettingsDialog(BuildContext context) async {
+    final notificationService = NotificationService();
+    final initialNotificationsEnabled =
+        await notificationService.areNotificationsEnabled();
+    final initialBackgroundRunning =
+      await notificationService.getBackgroundServiceEnabled();
+
+    if (!context.mounted) return;
+
+    bool notificationsEnabled = initialNotificationsEnabled;
+    bool backgroundRunning = initialBackgroundRunning;
+    bool backgroundBusy = false;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            Widget buildSwitchRow({
+              required IconData icon,
+              required String title,
+              required String subtitle,
+              required bool value,
+              required ValueChanged<bool> onChanged,
+            }) {
+              return InkWell(
+                onTap: () => onChanged(!value),
+                borderRadius: BorderRadius.circular(StreakSizes.radiusSm),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        icon,
+                        size: StreakSizes.iconSm,
+                        color: StreakColors.iconPrimary,
+                      ),
+                      const SizedBox(width: 12),
+                             Expanded(
+                               child: InkWell(
+                                 onTap: () => onChanged(!value),
+                                 borderRadius: BorderRadius.circular(
+                                   StreakSizes.radiusSm,
+                                 ),
+                                 child: Padding(
+                                   padding: const EdgeInsets.symmetric(vertical: 2),
+                                   child: Column(
+                                     crossAxisAlignment: CrossAxisAlignment.start,
+                                     children: [
+                                       Text(
+                                         title,
+                                         style: StreakTextStyles.bodyLarge.copyWith(
+                                           fontWeight: FontWeight.w600,
+                                         ),
+                                       ),
+                                       const SizedBox(height: 4),
+                                       Text(
+                                         subtitle,
+                                         style: StreakTextStyles.bodySmall,
+                                       ),
+                                     ],
+                                   ),
+                                 ),
+                               ),
+                             ),
+                      Switch(
+                        value: value,
+                        activeThumbColor: StreakColors.accent,
+                        onChanged: onChanged,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            Future<void> toggleBackgroundService() async {
+              if (backgroundBusy) return;
+              backgroundBusy = true;
+              setDialogState(() {});
+
+              await notificationService.toggleBackgroundService();
+              backgroundRunning =
+                  await notificationService.getBackgroundServiceEnabled();
+
+              backgroundBusy = false;
+              setDialogState(() {});
+              setState(() {});
+            }
+
             return AlertDialog(
               title: const Text(
                 'Ayarlar',
                 style: StreakTextStyles.heading3,
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.notifications_outlined),
-                    title: const Text('Bildirimler'),
-                    subtitle: const Text('Saat başı hatırlatma bildirimi (08:00-23:00)'),
-                    trailing: Switch(
-                      value: _notificationsEnabled,
-                      activeThumbColor: StreakColors.accent,
-                      onChanged: (value) async {
-                        setDialogState(() {
-                          _notificationsEnabled = value;
-                        });
-                        setState(() {
-                          _notificationsEnabled = value;
-                        });
-                        
-                        final notificationService = NotificationService();
-                        await notificationService.setNotificationsEnabled(value);
-                        
-                        if (value) {
-                          final granted = await notificationService.requestPermissions();
-                          if (granted) {
-                            await notificationService.scheduleExactDailyNotifications();
-                            await notificationService.startBackgroundService();
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: ListBody(
+                    children: [
+                      buildSwitchRow(
+                        icon: Icons.notifications_outlined,
+                        title: 'Bildirimler',
+                        subtitle:
+                            'Saat başı hatırlatma bildirimi (08:00-23:00)',
+                        value: notificationsEnabled,
+                        onChanged: (value) async {
+                          notificationsEnabled = value;
+                          setDialogState(() {});
+                          setState(() {
+                            _notificationsEnabled = value;
+                          });
+
+                          await notificationService
+                              .setNotificationsEnabled(value);
+
+                          if (value) {
+                            final granted =
+                                await notificationService.requestPermissions();
+                            if (granted) {
+                              await notificationService
+                                  .scheduleExactDailyNotifications();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Bildirimler aktifleştirildi'),
+                                    backgroundColor: StreakColors.accent,
+                                  ),
+                                );
+                              }
+                            }
+                          } else {
+                            await notificationService
+                                .cancelAllScheduledNotifications();
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Bildirimler aktifleştirildi'),
+                                  content: Text('Bildirimler deaktifleştirildi'),
                                   backgroundColor: StreakColors.accent,
                                 ),
                               );
                             }
                           }
-                        } else {
-                          await notificationService.cancelAllScheduledNotifications();
-                          await notificationService.stopBackgroundService();
+
+                          backgroundRunning =
+                              await notificationService
+                                .getBackgroundServiceEnabled();
+                          setDialogState(() {});
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.refresh),
+                        title: const Text('Bildirimleri Yenile'),
+                        subtitle:
+                            const Text('Bildirim planlamasını yeniden başlat'),
+                        onTap: () async {
+                          await notificationService
+                              .scheduleExactDailyNotifications();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Bildirimler deaktifleştirildi'),
+                                content: Text('Bildirimler yeniden planlandı!'),
                                 backgroundColor: StreakColors.accent,
                               ),
                             );
                           }
-                        }
-                      },
-                    ),
+                        },
+                      ),
+                      buildSwitchRow(
+                        icon: Icons.play_circle_outline,
+                        title: 'Arka Plan Servisi',
+                        subtitle: backgroundRunning
+                            ? 'Arka planda çalışıyor (Saat başı bildirim)'
+                            : 'Durduruldu - Çalıştırmak için dokunun',
+                        value: backgroundRunning,
+                        onChanged: (value) async {
+                          if (!notificationsEnabled) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Önce bildirimleri açın'),
+                                  backgroundColor: StreakColors.accent,
+                                ),
+                              );
+                            }
+                            return;
+                          }
+                          await toggleBackgroundService();
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  backgroundRunning
+                                      ? 'Arka plan servisi başlatıldı!'
+                                      : 'Arka plan servisi durduruldu!',
+                                ),
+                                backgroundColor: StreakColors.accent,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.info_outline),
+                        title: const Text('Bildirim Durumu'),
+                        subtitle: FutureBuilder<List<dynamic>>(
+                          future: notificationService.getPendingNotifications(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              final count = snapshot.data!.length;
+                              return Text('$count bekleyen bildirim');
+                            }
+                            return const Text('Kontrol ediliyor...');
+                          },
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.notification_add),
+                        title: const Text('Test Bildirimi'),
+                        subtitle: const Text('Bildirim sistemini test et'),
+                        onTap: () async {
+                          await notificationService.testNotification();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Test bildirimi gönderildi!'),
+                                backgroundColor: StreakColors.accent,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.info_outline),
+                        title: const Text('Hakkında'),
+                        subtitle: const Text('Streak Takip v1.0.0'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          _showAboutDialog(context);
+                        },
+                      ),
+                    ],
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.refresh),
-                    title: const Text('Bildirimleri Yenile'),
-                    subtitle: const Text('Bildirim planlamasını yeniden başlat'),
-                    onTap: () async {
-                      final notificationService = NotificationService();
-                      await notificationService.scheduleExactDailyNotifications();
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Bildirimler yeniden planlandı!'),
-                            backgroundColor: StreakColors.accent,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: const Text('Hakkında'),
-                    subtitle: const Text('Streak Takip v1.0.0'),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _showAboutDialog(context);
-                    },
-                  ),
-                ],
+                ),
               ),
               actions: [
                 TextButton(
