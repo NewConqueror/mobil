@@ -58,7 +58,12 @@ class StorageService {
   }
 
   Future<bool> getNotificationsEnabled() async {
-    return _prefs.getBool('notifications_enabled') ?? true;
+    final value = _prefs.getBool('notifications_enabled');
+    if (value == null) {
+      await _prefs.setBool('notifications_enabled', true);
+      return true;
+    }
+    return value;
   }
 
   // First launch detection

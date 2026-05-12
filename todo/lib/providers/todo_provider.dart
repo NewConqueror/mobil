@@ -12,6 +12,7 @@ class TodoProvider with ChangeNotifier {
   
   bool _isLoading = false;
   bool _isInitialized = false;
+  bool _backgroundServiceEnabled = false;
 
   List<TodoItem> get todoItems => List.unmodifiable(_todoItems);
   List<TodoItem> get notTodoItems => List.unmodifiable(_notTodoItems);
@@ -20,7 +21,7 @@ class TodoProvider with ChangeNotifier {
   
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
-  bool get isBackgroundServiceRunning => _notificationService.isBackgroundServiceRunning;
+  bool get isBackgroundServiceRunning => _backgroundServiceEnabled;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -32,6 +33,8 @@ class TodoProvider with ChangeNotifier {
       _storageService = await StorageService.getInstance();
       _notificationService = NotificationService();
       await _notificationService.initialize();
+        _backgroundServiceEnabled =
+          await _notificationService.getBackgroundServiceEnabled();
       
       // Load existing items
       await _loadTodoItems();
@@ -223,11 +226,19 @@ class TodoProvider with ChangeNotifier {
   // Notification Methods
   Future<void> toggleBackgroundService() async {
     await _notificationService.toggleBackgroundService();
+    _backgroundServiceEnabled =
+        await _notificationService.getBackgroundServiceEnabled();
     notifyListeners();
   }
 
   Future<void> testNotification() async {
     await _notificationService.testNotification();
+  }
+
+  Future<void> refreshBackgroundServiceStatus() async {
+    _backgroundServiceEnabled =
+        await _notificationService.getBackgroundServiceEnabled();
+    notifyListeners();
   }
 
   // Statistics

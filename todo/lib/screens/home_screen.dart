@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/todo_provider.dart';
+import '../services/notification_service.dart';
 import '../widgets/todo_item_widget.dart';
 import '../widgets/add_todo_dialog.dart';
 import '../widgets/stats_widget.dart';
@@ -30,6 +31,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<bool> _getBackgroundServiceStatus() async {
+    final notificationService = NotificationService();
+    return await notificationService.getBackgroundServiceEnabled();
   }
 
   @override
@@ -73,6 +79,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => _showSettingsDialog(context),
+            tooltip: 'Ayarlar',
+          ),
+          IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () => _showStatsDialog(),
             tooltip: 'İstatistikler',
@@ -101,6 +112,247 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         backgroundColor: Colors.blue.shade600,
         child: const Icon(Icons.add, color: Colors.white),
       ),
+    );
+  }
+
+  void _showSettingsDialog(BuildContext context) async {
+    final notificationService = NotificationService();
+    final todoProvider = context.read<TodoProvider>();
+    await todoProvider.initialize();
+    final initialNotificationsEnabled =
+        await notificationService.areNotificationsEnabled();
+    await todoProvider.refreshBackgroundServiceStatus();
+    final initialBackgroundRunning = todoProvider.isBackgroundServiceRunning;
+
+    if (!context.mounted) return;
+
+    bool notificationsEnabled = initialNotificationsEnabled;
+    bool backgroundRunning = initialBackgroundRunning;
+    bool backgroundBusy = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Widget buildSwitchRow({
+              required IconData icon,
+              required String title,
+              required String subtitle,
+              required bool value,
+              required ValueChanged<bool> onChanged,
+            }) {
+              return InkWell(
+                onTap: () => onChanged(!value),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(icon, size: 20, color: Colors.grey.shade800),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              subtitle,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: value,
+                        onChanged: onChanged,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            Future<void> toggleBackgroundService() async {
+              if (backgroundBusy) return;
+              backgroundBusy = true;
+              setDialogState(() {});
+
+              await todoProvider.toggleBackgroundService();
+              backgroundRunning = todoProvider.isBackgroundServiceRunning;
+
+              backgroundBusy = false;
+              setDialogState(() {});
+              setState(() {});
+            }
+
+            return AlertDialog(
+              title: const Text('Ayarlar'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: ListBody(
+                    children: [
+                      buildSwitchRow(
+                        icon: Icons.notifications_outlined,
+                        title: 'Bildirimler',
+                        subtitle:
+                            'Saat başı hatırlatma bildirimi (08:00-23:00)',
+                        value: notificationsEnabled,
+                        onChanged: (value) async {
+                          notificationsEnabled = value;
+                          setDialogState(() {});
+
+                          await notificationService
+                              .setNotificationsEnabled(value);
+
+                          if (value) {
+                            final granted = await notificationService
+                                .requestPermissions();
+                            if (granted) {
+                              await notificationService
+                                  .scheduleExactDailyNotifications();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text(
+                                      'Bildirimler aktifleştirildi',
+                                    ),
+                                    backgroundColor: Colors.blue.shade600,
+                                  ),
+                                );
+                              }
+                            }
+                          } else {
+                            await notificationService
+                                .cancelAllScheduledNotifications();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                    'Bildirimler deaktifleştirildi',
+                                  ),
+                                  backgroundColor: Colors.blue.shade600,
+                                ),
+                              );
+                            }
+                          }
+                          await todoProvider.refreshBackgroundServiceStatus();
+                            backgroundRunning =
+                              todoProvider.isBackgroundServiceRunning;
+                          setDialogState(() {});
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.refresh),
+                        title: const Text('Bildirimleri Yenile'),
+                        subtitle:
+                            const Text('Bildirim planlamasını yeniden başlat'),
+                        onTap: () async {
+                          await notificationService
+                              .scheduleExactDailyNotifications();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  'Bildirimler yeniden planlandı!',
+                                ),
+                                backgroundColor: Colors.blue.shade600,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      buildSwitchRow(
+                        icon: Icons.play_circle_outline,
+                        title: 'Arka Plan Servisi',
+                        subtitle: backgroundRunning
+                            ? 'Arka planda çalışıyor (Saat başı bildirim)'
+                            : 'Durduruldu - Çalıştırmak için dokunun',
+                        value: backgroundRunning,
+                        onChanged: (value) async {
+                          if (!notificationsEnabled) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Önce bildirimleri açın'),
+                                  backgroundColor: Colors.blue.shade600,
+                                ),
+                              );
+                            }
+                            return;
+                          }
+                          await toggleBackgroundService();
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  backgroundRunning
+                                      ? 'Arka plan servisi başlatıldı!'
+                                      : 'Arka plan servisi durduruldu!',
+                                ),
+                                backgroundColor: Colors.blue.shade600,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.info_outline),
+                        title: const Text('Bildirim Durumu'),
+                        subtitle: FutureBuilder<List<dynamic>>(
+                          future: notificationService.getPendingNotifications(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              final count = snapshot.data!.length;
+                              return Text('$count bekleyen bildirim');
+                            }
+                            return const Text('Kontrol ediliyor...');
+                          },
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.notification_add),
+                        title: const Text('Test Bildirimi'),
+                        subtitle: const Text('Bildirim sistemini test et'),
+                        onTap: () async {
+                          await notificationService.testNotification();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Test bildirimi gönderildi!'),
+                                backgroundColor: Colors.blue.shade600,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Kapat'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
